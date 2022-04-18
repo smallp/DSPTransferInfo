@@ -3,6 +3,7 @@ using HarmonyLib;
 using UnityEngine;
 using System.Collections.Generic;
 using System.Reflection;
+using UnityEngine.Events;
 
 namespace MyFirstPlugin
 {
@@ -15,9 +16,10 @@ namespace MyFirstPlugin
 
         private List<TransportInfo> arrayList = new List<TransportInfo>();
         internal static string search = "";
-        internal static Dictionary<int,string> itemCache = new Dictionary<int, string>();
+        internal static Dictionary<int, string> itemCache = new Dictionary<int, string>();
         internal static List<Cell> cells = new List<Cell>();
-        internal static Vector2 scroll = new Vector2(0,0);
+        internal static Vector2 scroll = new Vector2(0, 0);
+        internal static double time = 0;
 
         private void Awake()
         {
@@ -29,11 +31,10 @@ namespace MyFirstPlugin
             Window.OnWinodwGUI = guiInfo;
             Window.OnWindowOpen = () =>
             {
-                getInfo();
-            };
-            Window.OnWindowClose = () =>
-            {
                 arrayList.Clear();
+                itemCache.Clear();
+                cells.Clear();
+                getInfo();
             };
         }
 
@@ -46,9 +47,9 @@ namespace MyFirstPlugin
         {
             if (Input.GetKeyDown(KeyCode.F4))
             {
-                if (!GameMain.isRunning)
+                if (!GameMain.isRunning && !GameMain.isPaused)
                 {
-                    Window.Show=false;
+                    Window.Show = false;
                     return;
                 }
                 Window.Show = !Window.Show;
@@ -61,16 +62,16 @@ namespace MyFirstPlugin
             Dictionary<int, List<TransportInfo>> map = new Dictionary<int, List<TransportInfo>>();
             foreach (StationComponent station in stations)
             {
-                if (station==null || station.isCollector || station.isVeinCollector)
+                if (station == null || station.isCollector || station.isVeinCollector)
                 {
                     continue;
                 }
-                TransportInfo info=new TransportInfo();
+                TransportInfo info = new TransportInfo();
                 info.id = station.id;
                 info.gid = station.gid;
-                info.name = string.IsNullOrEmpty(station.name)?"transfer-"+ info.id : station.name;
-                info.entityId=station.entityId;
-                info.planetId=station.planetId;
+                info.name = string.IsNullOrEmpty(station.name) ? "transfer-" + info.id : station.name;
+                info.entityId = station.entityId;
+                info.planetId = station.planetId;
                 arrayList.Add(info);
                 int galaxy = station.planetId / 100;
                 if (!map.ContainsKey(galaxy))
@@ -81,9 +82,9 @@ namespace MyFirstPlugin
             }
             foreach (var kv in map)
             {
-                string name=GameMain.galaxy.StarById(kv.Key).displayName;
+                string name = GameMain.galaxy.StarById(kv.Key).displayName;
                 kv.Value.Sort();
-                cells.Add(new Cell(name,kv.Value, OpenTransfer));
+                cells.Add(new Cell(name, kv.Value, OpenTransfer));
             }
         }
 
@@ -92,9 +93,9 @@ namespace MyFirstPlugin
             StationComponent[] stations = GameMain.data.galacticTransport.stationPool;
             foreach (var info in arrayList)
             {
-                var item=stations[info.gid];
+                var item = stations[info.gid];
                 int i = -1;
-                foreach(var storage in item.storage)
+                foreach (var storage in item.storage)
                 {
                     i++;
                     if (storage.itemId <= 0) continue;
@@ -109,14 +110,17 @@ namespace MyFirstPlugin
 
         void OpenTransfer(TransportInfo item)
         {
-            var uigame=UIRoot.instance.uiGame;
+            var uigame = UIRoot.instance.uiGame;
             uigame.OpenPlayerInventory();
             var win = uigame.stationWindow;
-            win.player= GameMain.mainPlayer;
+            win.player = GameMain.mainPlayer;
             win.factory = GameMain.data.GetOrCreateFactory(GameMain.data.galaxy.PlanetById(item.planetId));
             win.transport = win.factory.transport;
             win.powerSystem = win.factory.powerSystem;
             win.factorySystem = win.factory.factorySystem;
+
+            win.nameInput.onValueChanged.AddListener(new UnityAction<string>(win.OnNameInputSubmit));
+            win.nameInput.onEndEdit.AddListener(new UnityAction<string>(win.OnNameInputSubmit));
             win._Open();
             win.stationId = item.id;
             Window.Show = false;
@@ -129,7 +133,11 @@ namespace MyFirstPlugin
 
         void guiInfo()
         {
-            UpdateItems();
+            if (GameMain.gameTime - time > 1)
+            {
+                UpdateItems();
+                time = GameMain.gameTime;
+            }
             GUILayout.BeginHorizontal();
             GUILayout.Label("Search:", GUILayout.ExpandWidth(false));
             search = GUILayout.TextField(search);

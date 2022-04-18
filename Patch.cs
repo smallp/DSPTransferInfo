@@ -9,13 +9,11 @@ namespace MyFirstPlugin
         [HarmonyPrefix, HarmonyPatch(typeof(UIStationWindow), "_OnOpen")]
         public static bool openStorageWindow(UIStationWindow __instance)
         {
-            Debug.Log(__instance.stationId);
-            //如果有factory，跳过初始化过程
             if (__instance.factory == null)
             {
                 return true;
             }
-            Debug.Log(__instance.factory.planet);
+            //如果有factory，跳过初始化过程
             __instance.transform.SetAsLastSibling();
             return false;
         }

@@ -30,5 +30,8 @@
       <HintPath>lib\netstandard.dll</HintPath>
       <CopyLocal>False</CopyLocal>
     </Reference>
+    <Reference Include="UnityEngine.UI">
+      <HintPath>lib\UnityEngine.UI.dll</HintPath>
+    </Reference>
   </ItemGroup>
 </Project>
