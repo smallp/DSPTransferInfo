@@ -97,10 +97,9 @@ namespace MyFirstPlugin
             foreach (var info in arrayList)
             {
                 var item = stations[info.gid];
-                int i = -1;
+                int i = 0;
                 foreach (var storage in item.storage)
                 {
-                    i++;
                     if (storage.itemId <= 0) continue;
                     if (!itemCache.ContainsKey(storage.itemId))
                     {
@@ -108,6 +107,7 @@ namespace MyFirstPlugin
                     }
                     info.items[i] = $"{itemCache[storage.itemId]}\n{storage.count}";
                     if (i >= 4) break;
+                    i++;
                 }
             }
         }
