@@ -2,12 +2,12 @@
 using HarmonyLib;
 using UnityEngine;
 using System.Collections.Generic;
-using System.Reflection;
 using UnityEngine.Events;
+using BepInEx.Configuration;
 
 namespace MyFirstPlugin
 {
-    [BepInPlugin(PluginName, "dsp", "1.0")]
+    [BepInPlugin(PluginName, "dsp", "1.1")]
     public class Plugin : BaseUnityPlugin
     {
         public const string PluginName = "com.small.dsp.transferInfo";
@@ -21,12 +21,14 @@ namespace MyFirstPlugin
         internal static Vector2 scroll = new Vector2(0, 0);
         internal static double time = 0;
 
+        public ConfigEntry<KeyCode> GUIHotkey;
+
         private void Awake()
         {
             // Plugin startup logic
             Harmony.CreateAndPatchAll(typeof(DSPPatch));
             Logger.LogInfo($"Plugin {PluginName} is loaded!");
-            Window = new XYModLib.UIWindow("Transfers Info");
+            Window = new XYModLib.UIWindow("Logistic Station Info");
             Window.Show = false;
             Window.OnWinodwGUI = guiInfo;
             Window.OnWindowOpen = () =>
@@ -36,6 +38,7 @@ namespace MyFirstPlugin
                 cells.Clear();
                 getInfo();
             };
+            GUIHotkey = Config.Bind("Common", "GUIHotkey", KeyCode.F4, "Hotkey to show Logistic Station Info");
         }
 
         protected void OnDestroy()
@@ -45,7 +48,7 @@ namespace MyFirstPlugin
 
         void Update()
         {
-            if (Input.GetKeyDown(KeyCode.F4))
+            if (Input.GetKeyDown(GUIHotkey.Value))
             {
                 if (!GameMain.isRunning && !GameMain.isPaused)
                 {
@@ -104,6 +107,7 @@ namespace MyFirstPlugin
                         itemCache.Add(storage.itemId, LDB.ItemName(storage.itemId));
                     }
                     info.items[i] = $"{itemCache[storage.itemId]}\n{storage.count}";
+                    if (i >= 4) break;
                 }
             }
         }
