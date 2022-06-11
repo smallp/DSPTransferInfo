@@ -53,9 +53,14 @@ namespace MyFirstPlugin
                 if (!GameMain.isRunning && !GameMain.isPaused)
                 {
                     Window.Show = false;
-                    return;
                 }
-                Window.Show = !Window.Show;
+                else
+                {
+                    bool ori = UICursor.locked;
+                    //cannot set cursor status, just ignore it.
+                    if (ori) return;
+                    Window.Show = !Window.Show;
+                }
             }
         }
 
