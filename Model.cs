@@ -1,6 +1,6 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using UnityEngine;
-using System;
 
 namespace MyFirstPlugin
 {
@@ -14,7 +14,7 @@ namespace MyFirstPlugin
         public int planetId;
         public TransportInfo()
         {
-            items = new string[] {"","", "", "", "" };
+            items = new string[] { "", "", "", "", "" };
         }
 
         public int CompareTo(TransportInfo other)
@@ -27,16 +27,18 @@ namespace MyFirstPlugin
     {
         private string name;
         private List<TransportInfo> data;
-        private bool isCollapse=true;
+        private bool isCollapse = true;
+        private bool isInSpace = false;
         private Action<TransportInfo> callback;
 
         private static GUIStyle _pluginHeaderSkin = null;
 
-        public Cell(string name, List<TransportInfo> data, Action<TransportInfo> callback)
+        public Cell(string name, List<TransportInfo> data, Action<TransportInfo> callback, bool isInSpace)
         {
-            this.name=name;
+            this.name = name;
             this.data = data;
             this.callback = callback;
+            this.isInSpace = isInSpace;
         }
 
         public void Draw(string search)
@@ -90,13 +92,16 @@ namespace MyFirstPlugin
             GUILayout.BeginHorizontal();
             GUILayout.Label(item.id.ToString(), GUILayout.Width(25));
             GUILayout.Label(item.name);
-            foreach(var good in item.items)
+            foreach (var good in item.items)
             {
-                GUILayout.Label(good,GUILayout.Width(100));
+                GUILayout.Label(good, GUILayout.Width(100));
             }
-            if (GUILayout.Button("info", GUILayout.ExpandWidth(false)))
+            if (!isInSpace)
             {
-                callback(item);
+                if (GUILayout.Button("info", GUILayout.ExpandWidth(false)))
+                {
+                    callback(item);
+                }
             }
             GUILayout.EndHorizontal();
         }

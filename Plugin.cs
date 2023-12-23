@@ -1,9 +1,9 @@
 ﻿using BepInEx;
-using HarmonyLib;
-using UnityEngine;
-using System.Collections.Generic;
-using UnityEngine.Events;
 using BepInEx.Configuration;
+using HarmonyLib;
+using System.Collections.Generic;
+using System.Reflection;
+using UnityEngine;
 
 namespace MyFirstPlugin
 {
@@ -13,6 +13,7 @@ namespace MyFirstPlugin
         public const string PluginName = "com.small.dsp.transferInfo";
 
         private XYModLib.UIWindow Window;
+        private PropertyInfo planetSetter;
 
         private List<TransportInfo> arrayList = new List<TransportInfo>();
         internal static string search = "";
@@ -26,7 +27,7 @@ namespace MyFirstPlugin
         private void Awake()
         {
             // Plugin startup logic
-            Harmony.CreateAndPatchAll(typeof(DSPPatch));
+            //Harmony.CreateAndPatchAll(typeof(DSPPatch));
             Logger.LogInfo($"Plugin {PluginName} is loaded!");
             Window = new XYModLib.UIWindow("Logistic Station Info");
             Window.Show = false;
@@ -39,6 +40,7 @@ namespace MyFirstPlugin
                 getInfo();
             };
             GUIHotkey = Config.Bind("Common", "GUIHotkey", KeyCode.F4, "Hotkey to show Logistic Station Info");
+            planetSetter = typeof(GameData).GetProperty("localPlanet");
         }
 
         protected void OnDestroy()
@@ -50,7 +52,7 @@ namespace MyFirstPlugin
         {
             if (Input.GetKeyDown(GUIHotkey.Value))
             {
-                if (!GameMain.isRunning && !GameMain.isPaused)
+                if (!GameMain.isRunning || GameMain.isPaused)
                 {
                     Window.Show = false;
                 }
@@ -68,6 +70,7 @@ namespace MyFirstPlugin
         {
             StationComponent[] stations = GameMain.data.galacticTransport.stationPool;
             Dictionary<int, List<TransportInfo>> map = new Dictionary<int, List<TransportInfo>>();
+            Dictionary<int, PlanetFactory> facCache = new Dictionary<int, PlanetFactory>();
             foreach (StationComponent station in stations)
             {
                 if (station == null || station.isCollector || station.isVeinCollector)
@@ -77,9 +80,17 @@ namespace MyFirstPlugin
                 TransportInfo info = new TransportInfo();
                 info.id = station.id;
                 info.gid = station.gid;
-                info.name = string.IsNullOrEmpty(station.name) ? "transfer-" + info.id : station.name;
                 info.entityId = station.entityId;
                 info.planetId = station.planetId;
+
+                //查物流站名称
+                if (!facCache.ContainsKey(info.planetId))
+                {
+                    facCache[info.planetId] = GameMain.data.GetOrCreateFactory(GameMain.data.galaxy.PlanetById(info.planetId));
+                }
+                info.name = facCache[info.planetId].ReadExtraInfoOnEntity(info.entityId);
+                info.name = info.name == "" ? "transfer-" + info.id : info.name;
+
                 arrayList.Add(info);
                 int galaxy = station.planetId / 100;
                 if (!map.ContainsKey(galaxy))
@@ -88,11 +99,12 @@ namespace MyFirstPlugin
                 }
                 map[galaxy].Add(info);
             }
+            var inSpace = GameMain.data.localPlanet == null;
             foreach (var kv in map)
             {
                 string name = GameMain.galaxy.StarById(kv.Key).displayName;
                 kv.Value.Sort();
-                cells.Add(new Cell(name, kv.Value, OpenTransfer));
+                cells.Add(new Cell(name, kv.Value, OpenTransfer, inSpace));
             }
         }
 
@@ -119,19 +131,25 @@ namespace MyFirstPlugin
 
         void OpenTransfer(TransportInfo item)
         {
-            var uigame = UIRoot.instance.uiGame;
-            uigame.OpenPlayerInventory();
-            var win = uigame.stationWindow;
-            win.player = GameMain.mainPlayer;
-            win.factory = GameMain.data.GetOrCreateFactory(GameMain.data.galaxy.PlanetById(item.planetId));
-            win.transport = win.factory.transport;
-            win.powerSystem = win.factory.powerSystem;
-            win.factorySystem = win.factory.factorySystem;
-
-            win.nameInput.onValueChanged.AddListener(new UnityAction<string>(win.OnNameInputSubmit));
-            win.nameInput.onEndEdit.AddListener(new UnityAction<string>(win.OnNameInputSubmit));
-            win._Open();
+            var uiGame = UIRoot.instance.uiGame;
+            uiGame.OpenPlayerInventory();
+            var win = uiGame.stationWindow;
+            var oriPlanet = GameMain.localPlanet;
+            if (oriPlanet == null)
+            {
+                Window.Show = false;
+                return;
+            }
+            else if (oriPlanet.id != item.planetId)
+            {//需要处理星球信息
+                var planet = GameMain.data.galaxy.PlanetById(item.planetId);
+                planet.factory = GameMain.data.GetOrCreateFactory(planet);
+                planetSetter.SetValue(GameMain.data, planet);
+                Logger.LogInfo(GameMain.localPlanet.id);
+            }
             win.stationId = item.id;
+            win._Open();
+            planetSetter.SetValue(GameMain.data, oriPlanet);
             Window.Show = false;
         }
 
@@ -157,7 +175,7 @@ namespace MyFirstPlugin
                 item.Draw(search);
             }
             GUILayout.EndScrollView();
-            Input.ResetInputAxes();
+            //Input.ResetInputAxes();
         }
     }
 }

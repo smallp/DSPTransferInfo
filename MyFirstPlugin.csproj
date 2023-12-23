@@ -1,37 +1,47 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
-  <PropertyGroup>
-    <TargetFramework>net46</TargetFramework>
-    <AssemblyName>DSPTransferInfo</AssemblyName>
-    <Description>My first plugin</Description>
-    <Version>1.0.0</Version>
-    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-    <LangVersion>latest</LangVersion>
-    <Authors>Small</Authors>
-    <BaseOutputPath>bin\</BaseOutputPath>
-  </PropertyGroup>
+	<PropertyGroup>
+		<TargetFramework>net46</TargetFramework>
+		<AssemblyName>DSPTransferInfo</AssemblyName>
+		<Description>My first plugin</Description>
+		<Version>1.0.0</Version>
+		<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+		<LangVersion>latest</LangVersion>
+		<Authors>Small</Authors>
+		<BaseOutputPath>C:\Program Files (x86)\Steam\steamapps\common\Dyson Sphere Program\BepInEx\scripts</BaseOutputPath>
+		<PackageOutputPath>$(OutputPath)</PackageOutputPath>
+	</PropertyGroup>
+	<PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
+		<DebugType>Full</DebugType>
+	</PropertyGroup>
+	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+	  <DebugType>full</DebugType>
+	</PropertyGroup>
 
-  <ItemGroup>
-    <PackageReference Include="BepInEx.Analyzers" Version="1.*" PrivateAssets="all" />
-    <PackageReference Include="BepInEx.Core" Version="5.*" />
-    <PackageReference Include="UnityEngine.Modules" Version="2018.4.12" IncludeAssets="compile" />
-  </ItemGroup>
-  
-  <ItemGroup Condition="'$(TargetFramework.TrimEnd(`0123456789`))' == 'net'">
-    <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies" Version="1.0.2" PrivateAssets="all" />
-  </ItemGroup>
-  
-  <ItemGroup>
-    <Reference Include="Assembly-CSharp">
-      <HintPath>lib\Assembly-CSharp.dll</HintPath>
-      <CopyLocal>False</CopyLocal>
-    </Reference>
-    <Reference Include="netstandard">
-      <HintPath>lib\netstandard.dll</HintPath>
-      <CopyLocal>False</CopyLocal>
-    </Reference>
-    <Reference Include="UnityEngine.UI">
-      <HintPath>lib\UnityEngine.UI.dll</HintPath>
-    </Reference>
-  </ItemGroup>
+	<ItemGroup>
+		<PackageReference Include="BepInEx.Analyzers" Version="1.*" PrivateAssets="all" />
+		<PackageReference Include="BepInEx.Core" Version="5.*" />
+		<PackageReference Include="UnityEngine.Modules" Version="2018.4.12" IncludeAssets="compile" />
+	</ItemGroup>
+
+	<ItemGroup Condition="'$(TargetFramework.TrimEnd(`0123456789`))' == 'net'">
+		<PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies" Version="1.0.2" PrivateAssets="all" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<Reference Include="Assembly-CSharp">
+			<HintPath>lib\Assembly-CSharp.dll</HintPath>
+			<CopyLocal>False</CopyLocal>
+			<Private>False</Private>
+		</Reference>
+		<Reference Include="netstandard">
+			<HintPath>lib\netstandard.dll</HintPath>
+			<CopyLocal>False</CopyLocal>
+			<Private>False</Private>
+		</Reference>
+		<Reference Include="UnityEngine.UI">
+			<HintPath>lib\UnityEngine.UI.dll</HintPath>
+			<Private>False</Private>
+		</Reference>
+	</ItemGroup>
 </Project>
