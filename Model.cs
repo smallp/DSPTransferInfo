@@ -78,13 +78,23 @@ namespace MyFirstPlugin
                 GUILayout.Label(name, _pluginHeaderSkin);
                 data.ForEach((item) =>
                 {
-                    if (item.name.IndexOf(search) >= 0)
+                    if (searched(item, search))
                     {
                         DrawItem(item);
                     }
                 });
             }
             GUILayout.EndVertical();
+        }
+
+        private bool searched(TransportInfo item, string search)
+        {
+            if (item.name.IndexOf(search) >= 0) return true;
+            foreach (var good in item.items)
+            {
+                if (good.IndexOf(search) >= 0) return true;
+            }
+            return false;
         }
 
         private void DrawItem(TransportInfo item)

@@ -73,7 +73,7 @@ namespace MyFirstPlugin
             Dictionary<int, PlanetFactory> facCache = new Dictionary<int, PlanetFactory>();
             foreach (StationComponent station in stations)
             {
-                if (station == null || station.isCollector || station.isVeinCollector)
+                if (station == null || station.isVeinCollector)
                 {
                     continue;
                 }
@@ -89,7 +89,7 @@ namespace MyFirstPlugin
                     facCache[info.planetId] = GameMain.data.GetOrCreateFactory(GameMain.data.galaxy.PlanetById(info.planetId));
                 }
                 info.name = facCache[info.planetId].ReadExtraInfoOnEntity(info.entityId);
-                info.name = info.name == "" ? "transfer-" + info.id : info.name;
+                info.name = info.name == "" ? (station.isCollector ? "collector-" : "transfer-") + info.id : info.name;
 
                 arrayList.Add(info);
                 int galaxy = station.planetId / 100;
@@ -145,7 +145,6 @@ namespace MyFirstPlugin
                 var planet = GameMain.data.galaxy.PlanetById(item.planetId);
                 planet.factory = GameMain.data.GetOrCreateFactory(planet);
                 planetSetter.SetValue(GameMain.data, planet);
-                Logger.LogInfo(GameMain.localPlanet.id);
             }
             win.stationId = item.id;
             win._Open();
