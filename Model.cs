@@ -12,6 +12,7 @@ namespace MyFirstPlugin
         public string[] items;
         public int entityId;
         public int planetId;
+        public bool isCollector;
         public TransportInfo()
         {
             items = new string[] { "", "", "", "", "" };
@@ -26,14 +27,14 @@ namespace MyFirstPlugin
     internal class Cell
     {
         private string name;
-        private List<TransportInfo> data;
+        private Dictionary<string, List<TransportInfo>> data;
         private bool isCollapse = true;
         private bool isInSpace = false;
         private Action<TransportInfo> callback;
 
         private static GUIStyle _pluginHeaderSkin = null;
 
-        public Cell(string name, List<TransportInfo> data, Action<TransportInfo> callback, bool isInSpace)
+        public Cell(string name, Dictionary<string, List<TransportInfo>> data, Action<TransportInfo> callback, bool isInSpace)
         {
             this.name = name;
             this.data = data;
@@ -41,7 +42,7 @@ namespace MyFirstPlugin
             this.isInSpace = isInSpace;
         }
 
-        public void Draw(string search)
+        public void Draw(string search, bool showCollector)
         {
             if (_pluginHeaderSkin == null)
             {
@@ -69,20 +70,44 @@ namespace MyFirstPlugin
                     {
                         isCollapse = !isCollapse;
                     }
-                    data.ForEach(item => DrawItem(item));
+                    foreach (var item in data)
+                    {
+                        List<TransportInfo> ed = new List<TransportInfo>();
+                        item.Value.ForEach((item) =>
+                        {
+                            if (showCollector || !item.isCollector)
+                            {
+                                ed.Add(item);
+                            }
+                        });
+                        if (ed.Count > 0)
+                        {
+                            GUILayout.Label(item.Key, _pluginHeaderSkin);
+                            ed.ForEach(DrawItem);
+                        }
+                    }
                 }
             }
             else
             {
                 //serching, ignore
                 GUILayout.Label(name, _pluginHeaderSkin);
-                data.ForEach((item) =>
+                foreach (var item in data)
                 {
-                    if (searched(item, search))
+                    List<TransportInfo> ed = new List<TransportInfo>();
+                    item.Value.ForEach((item) =>
                     {
-                        DrawItem(item);
+                        if (searched(item, search) && (showCollector || !item.isCollector))
+                        {
+                            ed.Add(item);
+                        }
+                    });
+                    if (ed.Count > 0)
+                    {
+                        GUILayout.Label(item.Key, _pluginHeaderSkin);
+                        ed.ForEach(DrawItem);
                     }
-                });
+                }
             }
             GUILayout.EndVertical();
         }

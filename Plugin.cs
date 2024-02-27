@@ -21,6 +21,7 @@ namespace MyFirstPlugin
         internal static List<Cell> cells = new List<Cell>();
         internal static Vector2 scroll = new Vector2(0, 0);
         internal static double time = 0;
+        internal static bool showCollector = false;
 
         public ConfigEntry<KeyCode> GUIHotkey;
 
@@ -69,7 +70,7 @@ namespace MyFirstPlugin
         void getInfo()
         {
             StationComponent[] stations = GameMain.data.galacticTransport.stationPool;
-            Dictionary<int, List<TransportInfo>> map = new Dictionary<int, List<TransportInfo>>();
+            Dictionary<int, Dictionary<string, List<TransportInfo>>> map = new Dictionary<int, Dictionary<string, List<TransportInfo>>>();
             Dictionary<int, PlanetFactory> facCache = new Dictionary<int, PlanetFactory>();
             foreach (StationComponent station in stations)
             {
@@ -82,28 +83,35 @@ namespace MyFirstPlugin
                 info.gid = station.gid;
                 info.entityId = station.entityId;
                 info.planetId = station.planetId;
+                info.isCollector = station.isCollector;
 
                 //查物流站名称
+                int galaxy = station.planetId / 100;
+                if (!map.ContainsKey(galaxy))
+                {
+                    map.Add(galaxy, new Dictionary<string, List<TransportInfo>>());
+                }
+                var plantName = "";
                 if (!facCache.ContainsKey(info.planetId))
                 {
                     facCache[info.planetId] = GameMain.data.GetOrCreateFactory(GameMain.data.galaxy.PlanetById(info.planetId));
+                    plantName = facCache[info.planetId].planet.name;
+                    map[galaxy].Add(plantName, new List<TransportInfo>());
+                }
+                else
+                {
+                    plantName = facCache[info.planetId].planet.name;
                 }
                 info.name = facCache[info.planetId].ReadExtraInfoOnEntity(info.entityId);
                 info.name = info.name == "" ? (station.isCollector ? "collector-" : "transfer-") + info.id : info.name;
 
                 arrayList.Add(info);
-                int galaxy = station.planetId / 100;
-                if (!map.ContainsKey(galaxy))
-                {
-                    map.Add(galaxy, new List<TransportInfo>());
-                }
-                map[galaxy].Add(info);
+                map[galaxy][plantName].Add(info);
             }
             var inSpace = GameMain.data.localPlanet == null;
             foreach (var kv in map)
             {
                 string name = GameMain.galaxy.StarById(kv.Key).displayName;
-                kv.Value.Sort();
                 cells.Add(new Cell(name, kv.Value, OpenTransfer, inSpace));
             }
         }
@@ -165,16 +173,18 @@ namespace MyFirstPlugin
                 time = GameMain.gameTime;
             }
             GUILayout.BeginHorizontal();
+            showCollector = GUILayout.Toggle(showCollector, "显示采集器/show collector");
+            GUILayout.EndHorizontal();
+            GUILayout.BeginHorizontal();
             GUILayout.Label("Search:", GUILayout.ExpandWidth(false));
             search = GUILayout.TextField(search);
             GUILayout.EndHorizontal();
             scroll = GUILayout.BeginScrollView(scroll);
             foreach (Cell item in cells)
             {
-                item.Draw(search);
+                item.Draw(search, showCollector);
             }
             GUILayout.EndScrollView();
-            //Input.ResetInputAxes();
         }
     }
 }
